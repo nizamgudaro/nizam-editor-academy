@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nizam Editor – Digital Skills Academy</title>
+    
+    <!-- PWA & Mobile App Meta Tags -->
+    <meta name="theme-color" content="#080c14">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nizam Editor">
+    <link rel="manifest" id="manifest-link">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        heading: ['"Space Grotesk"', 'sans-serif'],
+                    },
+                    colors: {
+                        darkBg: '#090d16',
+                        cardBg: '#111827',
+                        cardBorder: '#1f293d',
+                        brandBlue: '#3b82f6',
+                        brandPurple: '#8b5cf6',
+                        brandCyan: '#06b6d4',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 3s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        glow: {
+                            '0%': { opacity: '0.4', filter: 'blur(20px)' },
+                            '100%': { opacity: '0.8', filter: 'blur(30px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #080c14;
+            color: #f3f4f6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Styles */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card-hover:hover {
+            transform: translateY(-6px);
+            border-color: rgba(139, 92, 246, 0.35);
+            box-shadow: 0 15px 35px -10px rgba(59, 130, 246, 0.2);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-border {
+            position: relative;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(139, 92, 246, 0.5));
+            padding: 1px;
+        }
+
+        .gradient-border-inner {
+            background: #0d1322;
+            border-radius: calc(1rem - 1px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #080c14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+
+        /* Ambient Canvas overlay */
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body class="relative antialiased selection:bg-brandPurple selection:text-white">
+
+    <!-- Background Canvas animation -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- Background Ambient Glow Lights -->
+    <div class="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-brandBlue/20 rounded-full blur-[140px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-brandPurple/20 rounded-full blur-[140px] pointer-events-none z-0"></div>
+
+    <div class="relative z-10 flex flex-col min-h-screen">
+
+        <!-- HEADER & NAVIGATION -->
+        <header class="sticky top-0 z-50 backdrop-blur-xl bg-darkBg/80 border-b border-white/10 transition-all duration-300" id="navbar">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                
+                <!-- Logo -->
+                <a href="#home" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform duration-300">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-heading font-bold text-lg sm:text-xl text-white tracking-tight group-hover:text-blue-400 transition-colors">
+                            Nizam Editor
+                        </span>
+                        <span class="text-[10px] uppercase tracking-widest text-indigo-400 font-semibold -mt-1">
+                            Digital Skills Academy
+                        </span>
+                    </div>
+                </a>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden md:flex items-center gap-8">
+                    <a href="#home" class="text-sm font-medium text-gray-300 hover:text-white transition-colors">Home</a>
+                    <a href="#about" class="text-sm font-medium text-gray-300 hover:text-white transition-colors">About</a>
+                    <a href="#courses" class="text-sm font-medium text-gray-300 hover:text-white transition-colors">Courses</a>
+                    <a href="#why-us" class="text-sm font-medium text-gray-300 hover:text-white transition-colors">Why Choose Us</a>
+                    <a href="#journey" class="text-sm font-medium text-gray-300 hover:text-white transition-colors">Learning Journey</a>
+                    <a href="#contact" class="text-sm font-medium text-gray-300 hover:text-white transition-colors">Contact</a>
+                </nav>
+
+                <!-- Action Button -->
+                <div class="hidden md:flex items-center gap-3">
+                    <!-- PWA Header Install Button -->
+                    <button id="pwaInstallHeaderBtn" onclick="triggerPwaInstall()" class="hidden relative inline-flex items-center justify-center px-4 py-2.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-xl hover:bg-emerald-500 hover:text-white transition-all duration-300 shadow-lg shadow-emerald-500/20">
+                        <i class="fa-solid fa-mobile-screen-button mr-2 text-sm"></i>
+                        <span>Install App</span>
+                    </button>
+
+                    <a href="#courses" class="relative inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-95">
+                        <span>Explore Courses</span>
+                        <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                    </a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuBtn" aria-label="Toggle Navigation Menu" class="md:hidden p-2.5 rounded-xl bg-gray-800/80 border border-gray-700 text-gray-300 hover:text-white focus:outline-none">
+                    <i class="fa-solid fa-bars text-lg" id="menuIcon"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Navigation Drawer -->
+            <div id="mobileMenu" class="hidden md:hidden border-b border-gray-800 bg-darkBg/95 backdrop-blur-2xl px-4 pt-3 pb-6 transition-all duration-300">
+                <div class="flex flex-col gap-3">
+                    <a href="#home" class="mobile-link px-4 py-2.5 rounded-lg text-base font-medium text-gray-200 hover:bg-gray-800/80 hover:text-blue-400">Home</a>
+                    <a href="#about" class="mobile-link px-4 py-2.5 rounded-lg text-base font-medium text-gray-200 hover:bg-gray-800/80 hover:text-blue-400">About</a>
+                    <a href="#courses" class="mobile-link px-4 py-2.5 rounded-lg text-base font-medium text-gray-200 hover:bg-gray-800/80 hover:text-blue-400">Courses</a>
+                    <a href="#why-us" class="mobile-link px-4 py-2.5 rounded-lg text-base font-medium text-gray-200 hover:bg-gray-800/80 hover:text-blue-400">Why Choose Us</a>
+                    <a href="#journey" class="mobile-link px-4 py-2.5 rounded-lg text-base font-medium text-gray-200 hover:bg-gray-800/80 hover:text-blue-400">Learning Journey</a>
+                    <a href="#contact" class="mobile-link px-4 py-2.5 rounded-lg text-base font-medium text-gray-200 hover:bg-gray-800/80 hover:text-blue-400">Contact</a>
+                    
+                    <a href="#courses" class="mobile-link mt-2 w-full text-center py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20">
+                        Explore Courses
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- HERO SECTION -->
+        <section id="home" class="relative pt-12 sm:pt-20 lg:pt-28 pb-16 sm:pb-24 lg:pb-32 overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+                    
+                    <!-- Left Hero Content -->
+                    <div class="lg:col-span-7 space-y-8 text-center lg:text-left">
+                        
+                        <!-- Badge -->
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-indigo-500/30 text-indigo-300 text-xs sm:text-sm font-medium animate-pulse-slow">
+                            <span class="flex h-2 w-2 rounded-full bg-blue-400"></span>
+                            <span>Nizam Editor – Digital Skills Academy</span>
+                        </div>
+
+                        <!-- Headline -->
+                        <h1 class="text-4xl sm:text-6xl lg:text-6xl font-extrabold font-heading text-white tracking-tight leading-[1.15]">
+                            Learn Digital Skills. <br class="hidden sm:inline">
+                            <span class="gradient-text">Build Your Future.</span>
+                        </h1>
+
+                        <!-- Description -->
+                        <p class="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto lg:mx-0 font-light leading-relaxed">
+                            Master practical digital skills with Nizam Editor – Digital Skills Academy and turn your creativity into real opportunities.
+                        </p>
+
+                        <!-- CTA Buttons -->
+                        <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+                            <!-- Mobile Main App Install Trigger Button -->
+                            <button id="pwaInstallHeroBtn" onclick="triggerPwaInstall()" class="hidden w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 shadow-xl shadow-emerald-600/25 hover:shadow-emerald-600/40 hover:scale-[1.02] active:scale-95 transition-all text-center border border-emerald-400/30">
+                                <i class="fa-solid fa-download mr-2"></i> Install Mobile App
+                            </button>
+
+                            <a href="#courses" class="w-full sm:w-auto px-8 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-xl shadow-indigo-600/25 hover:shadow-indigo-600/40 hover:scale-[1.02] active:scale-95 transition-all text-center">
+                                Explore Courses <i class="fa-solid fa-compass ml-2"></i>
+                            </a>
+                            <a href="#contact" class="w-full sm:w-auto px-8 py-4 rounded-xl font-semibold text-gray-200 glass-card border border-gray-700 hover:border-gray-500 hover:text-white hover:bg-white/5 active:scale-95 transition-all text-center">
+                                Contact Us <i class="fa-solid fa-paper-plane ml-2"></i>
+                            </a>
+                        </div>
+
+                        <!-- Quick Tagline Feature Pills -->
+                        <div class="pt-6 border-t border-gray-800/80 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center lg:text-left">
+                            <div class="flex flex-col">
+                                <span class="text-xl font-bold font-heading text-blue-400">Learn</span>
+                                <span class="text-xs text-gray-400">Core Concepts</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-xl font-bold font-heading text-purple-400">Practice</span>
+                                <span class="text-xs text-gray-400">Hands-on Exercises</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-xl font-bold font-heading text-cyan-400">Create</span>
+                                <span class="text-xs text-gray-400">Real Projects</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-xl font-bold font-heading text-emerald-400">Grow</span>
+                                <span class="text-xs text-gray-400">Digital Career</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right Visual Interactive Feature Graphic -->
+                    <div class="lg:col-span-5 relative flex justify-center">
+                        <div class="relative w-full max-w-md lg:max-w-none">
+                            
+                            <!-- Outer Ambient Backlight -->
+                            <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl blur-2xl opacity-40 animate-glow"></div>
+
+                            <!-- Dashboard Container Card -->
+                            <div class="relative glass-card rounded-2xl p-6 sm:p-8 border border-white/10 shadow-2xl space-y-6">
+                                
+                                <!-- Card Header -->
+                                <div class="flex items-center justify-between border-b border-gray-800 pb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex gap-1.5">
+                                            <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+                                            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                                            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                        </div>
+                                        <span class="text-xs font-mono text-gray-400">nizam-editor.academy</span>
+                                    </div>
+                                    <span class="text-xs px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                                        ● Active Modules
+                                    </span>
+                                </div>
+
+                                <!-- Academy Feature Showcase List -->
+                                <div class="space-y-4">
+                                    
+                                    <!-- Skill Card Item 1 -->
+                                    <div class="p-3.5 rounded-xl bg-gray-900/60 border border-gray-800/80 flex items-center justify-between hover:border-blue-500/40 transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                                                <i class="fa-solid fa-code"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-white">Web Development</div>
+                                                <div class="text-xs text-gray-400">Modern & Responsive Web</div>
+                                            </div>
+                                        </div>
+                                        <i class="fa-solid fa-check text-emerald-400 text-xs bg-emerald-500/10 p-1.5 rounded-full"></i>
+                                    </div>
+
+                                    <!-- Skill Card Item 2 -->
+                                    <div class="p-3.5 rounded-xl bg-gray-900/60 border border-gray-800/80 flex items-center justify-between hover:border-purple-500/40 transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                                                <i class="fa-solid fa-film"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-white">Video Editing</div>
+                                                <div class="text-xs text-gray-400">Short-Form & Transitions</div>
+                                            </div>
+                                        </div>
+                                        <i class="fa-solid fa-check text-emerald-400 text-xs bg-emerald-500/10 p-1.5 rounded-full"></i>
+                                    </div>
+
+                                    <!-- Skill Card Item 3 -->
+                                    <div class="p-3.5 rounded-xl bg-gray-900/60 border border-gray-800/80 flex items-center justify-between hover:border-cyan-500/40 transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                                                <i class="fa-solid fa-palette"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-white">Graphic Design</div>
+                                                <div class="text-xs text-gray-400">Logos, Thumbnails & Banners</div>
+                                            </div>
+                                        </div>
+                                        <i class="fa-solid fa-check text-emerald-400 text-xs bg-emerald-500/10 p-1.5 rounded-full"></i>
+                                    </div>
+
+                                    <!-- Skill Card Item 4 -->
+                                    <div class="p-3.5 rounded-xl bg-gray-900/60 border border-gray-800/80 flex items-center justify-between hover:border-amber-500/40 transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-white">Prompt Writing</div>
+                                                <div class="text-xs text-gray-400">AI Tools & Productivity</div>
+                                            </div>
+                                        </div>
+                                        <i class="fa-solid fa-check text-emerald-400 text-xs bg-emerald-500/10 p-1.5 rounded-full"></i>
+                                    </div>
+
+                                </div>
+
+                                <!-- Mini Callout Banner -->
+                                <div class="pt-2">
+                                    <div class="p-3 rounded-xl bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-indigo-500/20 flex items-center gap-3">
+                                        <i class="fa-solid fa-rocket text-indigo-400 text-lg"></i>
+                                        <div class="text-xs text-gray-300">
+                                            <span class="font-bold text-white">Project-Based Learning:</span> Practical training geared for online opportunities.
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ABOUT US SECTION -->
+        <section id="about" class="py-20 sm:py-28 relative border-t border-gray-800/60">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="max-w-4xl mx-auto text-center space-y-6">
+                    
+                    <!-- Section Tag -->
+                    <span class="inline-block text-xs font-bold uppercase tracking-widest text-blue-400 bg-blue-500/10 px-3.5 py-1.5 rounded-full border border-blue-500/20">
+                        About Us
+                    </span>
+
+                    <!-- Heading -->
+                    <h2 class="text-3xl sm:text-5xl font-extrabold font-heading text-white tracking-tight">
+                        Welcome to <span class="gradient-text">Nizam Editor – Digital Skills Academy</span>
+                    </h2>
+
+                    <!-- Description Block -->
+                    <div class="glass-card p-8 sm:p-12 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden text-left sm:text-center mt-8">
+                        <div class="absolute -top-12 -left-12 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
+                        <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl"></div>
+                        
+                        <p class="text-lg sm:text-xl text-gray-300 leading-relaxed font-light">
+                            Nizam Editor – Digital Skills Academy is focused on helping students learn modern digital skills through practical and easy-to-understand training. Our goal is to help learners develop useful skills for content creation, freelancing, online work and their digital careers.
+                        </p>
+
+                        <!-- Key Pillars Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-10 text-left border-t border-gray-800 pt-8">
+                            
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                                    <i class="fa-solid fa-laptop-code"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-semibold text-sm">Practical Training</h3>
+                                    <p class="text-xs text-gray-400 mt-1">Easy-to-understand hands-on lessons.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                                    <i class="fa-solid fa-clapperboard"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-semibold text-sm">Content Creation</h3>
+                                    <p class="text-xs text-gray-400 mt-1">Skills designed for modern digital creators.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0">
+                                    <i class="fa-solid fa-briefcase"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-semibold text-sm">Digital Career</h3>
+                                    <p class="text-xs text-gray-400 mt-1">Build skills for freelancing & online work.</p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- OUR COURSES SECTION -->
+        <section id="courses" class="py-20 sm:py-28 relative border-t border-gray-800/60 bg-darkBg/50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <!-- Section Header -->
+                <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+                    <span class="inline-block text-xs font-bold uppercase tracking-widest text-purple-400 bg-purple-500/10 px-3.5 py-1.5 rounded-full border border-purple-500/20">
+                        Educational Programs
+                    </span>
+                    <h2 class="text-3xl sm:text-5xl font-extrabold font-heading text-white tracking-tight">
+                        Our Professional <span class="gradient-text">Courses</span>
+                    </h2>
+                    <p class="text-gray-400 text-base sm:text-lg">
+                        Select a course below to build high-demand digital skills step-by-step.
+                    </p>
+                </div>
+
+                <!-- 4 Course Cards Grid -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    
+                    <!-- Course 1: Website Development -->
+                    <div class="glass-card glass-card-hover rounded-2xl p-6 flex flex-col justify-between border border-gray-800/80 group">
+                        <div class="space-y-5">
+                            <!-- Icon -->
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 text-2xl group-hover:scale-110 transition-transform duration-300">
+                                <i class="fa-solid fa-code"></i>
+                            </div>
+
+                            <!-- Title -->
+                            <h3 class="text-xl font-bold font-heading text-white group-hover:text-blue-400 transition-colors">
+                                Website Development
+                            </h3>
+
+                            <!-- Description -->
+                            <p class="text-sm text-gray-300 leading-relaxed">
+                                Learn to create modern, responsive and professional websites and understand the fundamentals of web development.
+                            </p>
+                        </div>
+
+                        <!-- Action Button -->
+                        <div class="pt-6 mt-6 border-t border-gray-800">
+                            <button onclick="openCourseModal('Website Development')" class="w-full py-3 px-4 rounded-xl text-sm font-semibold text-blue-400 bg-blue-500/10 hover:bg-blue-600 hover:text-white border border-blue-500/20 transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-blue-500/20">
+                                <span>Learn More</span>
+                                <i class="fa-solid fa-circle-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Course 2: Video Editing -->
+                    <div class="glass-card glass-card-hover rounded-2xl p-6 flex flex-col justify-between border border-gray-800/80 group">
+                        <div class="space-y-5">
+                            <!-- Icon -->
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 text-2xl group-hover:scale-110 transition-transform duration-300">
+                                <i class="fa-solid fa-video"></i>
+                            </div>
+
+                            <!-- Title -->
+                            <h3 class="text-xl font-bold font-heading text-white group-hover:text-purple-400 transition-colors">
+                                Video Editing
+                            </h3>
+
+                            <!-- Description -->
+                            <p class="text-sm text-gray-300 leading-relaxed">
+                                Learn video editing, transitions, effects, short-form video creation and professional social media content editing.
+                            </p>
+                        </div>
+
+                        <!-- Action Button -->
+                        <div class="pt-6 mt-6 border-t border-gray-800">
+                            <button onclick="openCourseModal('Video Editing')" class="w-full py-3 px-4 rounded-xl text-sm font-semibold text-purple-400 bg-purple-500/10 hover:bg-purple-600 hover:text-white border border-purple-500/20 transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-purple-500/20">
+                                <span>Learn More</span>
+                                <i class="fa-solid fa-circle-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Course 3: Graphic Design -->
+                    <div class="glass-card glass-card-hover rounded-2xl p-6 flex flex-col justify-between border border-gray-800/80 group">
+                        <div class="space-y-5">
+                            <!-- Icon -->
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-2xl group-hover:scale-110 transition-transform duration-300">
+                                <i class="fa-solid fa-pen-nib"></i>
+                            </div>
+
+                            <!-- Title -->
+                            <h3 class="text-xl font-bold font-heading text-white group-hover:text-cyan-400 transition-colors">
+                                Graphic Design
+                            </h3>
+
+                            <!-- Description -->
+                            <p class="text-sm text-gray-300 leading-relaxed">
+                                Learn to create professional logos, thumbnails, social media posts, banners and other creative designs.
+                            </p>
+                        </div>
+
+                        <!-- Action Button -->
+                        <div class="pt-6 mt-6 border-t border-gray-800">
+                            <button onclick="openCourseModal('Graphic Design')" class="w-full py-3 px-4 rounded-xl text-sm font-semibold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-600 hover:text-white border border-cyan-500/20 transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-cyan-500/20">
+                                <span>Learn More</span>
+                                <i class="fa-solid fa-circle-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Course 4: Prompt Writing -->
+                    <div class="glass-card glass-card-hover rounded-2xl p-6 flex flex-col justify-between border border-gray-800/80 group">
+                        <div class="space-y-5">
+                            <!-- Icon -->
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-2xl group-hover:scale-110 transition-transform duration-300">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </div>
+
+                            <!-- Title -->
+                            <h3 class="text-xl font-bold font-heading text-white group-hover:text-amber-400 transition-colors">
+                                Prompt Writing
+                            </h3>
+
+                            <!-- Description -->
+                            <p class="text-sm text-gray-300 leading-relaxed">
+                                Learn how to write effective AI prompts and use modern AI tools for image generation, video creation, content creation and productivity.
+                            </p>
+                        </div>
+
+                        <!-- Action Button -->
+                        <div class="pt-6 mt-6 border-t border-gray-800">
+                            <button onclick="openCourseModal('Prompt Writing')" class="w-full py-3 px-4 rounded-xl text-sm font-semibold text-amber-400 bg-amber-500/10 hover:bg-amber-600 hover:text-white border border-amber-500/20 transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-amber-500/20">
+                                <span>Learn More</span>
+                                <i class="fa-solid fa-circle-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- WHY CHOOSE US SECTION -->
+        <section id="why-us" class="py-20 sm:py-28 relative border-t border-gray-800/60">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <!-- Section Header -->
+                <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+                    <span class="inline-block text-xs font-bold uppercase tracking-widest text-cyan-400 bg-cyan-500/10 px-3.5 py-1.5 rounded-full border border-cyan-500/20">
+                        Academy Advantages
+                    </span>
+                    <h2 class="text-3xl sm:text-5xl font-extrabold font-heading text-white tracking-tight">
+                        Why Choose <span class="gradient-text">Us?</span>
+                    </h2>
+                    <p class="text-gray-400 text-base sm:text-lg">
+                        We provide an empowering, practical learning environment built around your success.
+                    </p>
+                </div>
+
+                <!-- 6 Features Grid -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Feature 1 -->
+                    <div class="glass-card p-6 rounded-2xl border border-gray-800/80 hover:border-blue-500/40 transition-all flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg shrink-0 mt-1">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold font-heading text-white">Practical Learning</h3>
+                            <p class="text-sm text-gray-400 mt-1">Gain real-world skillsets through active, hands-on guidance and realistic exercises.</p>
+                        </div>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div class="glass-card p-6 rounded-2xl border border-gray-800/80 hover:border-purple-500/40 transition-all flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg shrink-0 mt-1">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold font-heading text-white">Beginner Friendly</h3>
+                            <p class="text-sm text-gray-400 mt-1">Simple, step-by-step concepts designed specifically for smooth learning progression.</p>
+                        </div>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div class="glass-card p-6 rounded-2xl border border-gray-800/80 hover:border-cyan-500/40 transition-all flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg shrink-0 mt-1">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold font-heading text-white">Modern Digital Skills</h3>
+                            <p class="text-sm text-gray-400 mt-1">Curriculum aligned with current industry tools and modern digital standards.</p>
+                        </div>
+                    </div>
+
+                    <!-- Feature 4 -->
+                    <div class="glass-card p-6 rounded-2xl border border-gray-800/80 hover:border-amber-500/40 transition-all flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg shrink-0 mt-1">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold font-heading text-white">Project-Based Practice</h3>
+                            <p class="text-sm text-gray-400 mt-1">Apply your knowledge immediately by creating tangible projects for your portfolio.</p>
+                        </div>
+                    </div>
+
+                    <!-- Feature 5 -->
+                    <div class="glass-card p-6 rounded-2xl border border-gray-800/80 hover:border-rose-500/40 transition-all flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg shrink-0 mt-1">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold font-heading text-white">Creative Learning Environment</h3>
+                            <p class="text-sm text-gray-400 mt-1">Supportive setup tailored to nurture individual creativity and innovation.</p>
+                        </div>
+                    </div>
+
+                    <!-- Feature 6 -->
+                    <div class="glass-card p-6 rounded-2xl border border-gray-800/80 hover:border-indigo-500/40 transition-all flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg shrink-0 mt-1">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold font-heading text-white">Skills for Freelancing & Online Work</h3>
+                            <p class="text-sm text-gray-400 mt-1">Equip yourself with practical skills useful for independent online freelancing opportunities.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- LEARNING JOURNEY SECTION -->
+        <section id="journey" class="py-20 sm:py-28 relative border-t border-gray-800/60 bg-darkBg/40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <!-- Section Header -->
+                <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+                    <span class="inline-block text-xs font-bold uppercase tracking-widest text-blue-400 bg-blue-500/10 px-3.5 py-1.5 rounded-full border border-blue-500/20">
+                        Structured Growth Path
+                    </span>
+                    <h2 class="text-3xl sm:text-5xl font-extrabold font-heading text-white tracking-tight">
+                        Learning <span class="gradient-text">Journey</span>
+                    </h2>
+                    <p class="text-gray-400 text-base sm:text-lg">
+                        A clear step-by-step roadmap designed to turn foundational concepts into real mastery.
+                    </p>
+                </div>
+
+                <!-- 4 Steps Visual Timeline Process -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 relative">
+                    
+                    <!-- Journey Step 1 -->
+                    <div class="glass-card rounded-2xl p-6 border border-gray-800/80 hover:border-blue-500/40 transition-all relative group">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-3xl font-extrabold font-heading text-blue-400">01</span>
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-book-open"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold font-heading text-white mb-2">Learn</h3>
+                        <p class="text-sm text-gray-300">Understand the fundamentals.</p>
+                        <div class="mt-4 pt-4 border-t border-gray-800 text-xs text-gray-500 font-mono">
+                            Phase 01 • Core Concepts
+                        </div>
+                    </div>
+
+                    <!-- Journey Step 2 -->
+                    <div class="glass-card rounded-2xl p-6 border border-gray-800/80 hover:border-purple-500/40 transition-all relative group">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-3xl font-extrabold font-heading text-purple-400">02</span>
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-keyboard"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold font-heading text-white mb-2">Practice</h3>
+                        <p class="text-sm text-gray-300">Practice your skills with real examples.</p>
+                        <div class="mt-4 pt-4 border-t border-gray-800 text-xs text-gray-500 font-mono">
+                            Phase 02 • Hands-On Exercises
+                        </div>
+                    </div>
+
+                    <!-- Journey Step 3 -->
+                    <div class="glass-card rounded-2xl p-6 border border-gray-800/80 hover:border-cyan-500/40 transition-all relative group">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-3xl font-extrabold font-heading text-cyan-400">03</span>
+                            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-cubes"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold font-heading text-white mb-2">Create</h3>
+                        <p class="text-sm text-gray-300">Build creative projects and a portfolio.</p>
+                        <div class="mt-4 pt-4 border-t border-gray-800 text-xs text-gray-500 font-mono">
+                            Phase 03 • Portfolio Building
+                        </div>
+                    </div>
+
+                    <!-- Journey Step 4 -->
+                    <div class="glass-card rounded-2xl p-6 border border-gray-800/80 hover:border-emerald-500/40 transition-all relative group">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-3xl font-extrabold font-heading text-emerald-400">04</span>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold font-heading text-white mb-2">Grow</h3>
+                        <p class="text-sm text-gray-300">Use your skills for future opportunities.</p>
+                        <div class="mt-4 pt-4 border-t border-gray-800 text-xs text-gray-500 font-mono">
+                            Phase 04 • Career Advancement
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- CALL TO ACTION (CTA) SECTION -->
+        <section class="py-16 sm:py-24 relative border-t border-gray-800/60 overflow-hidden">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="relative rounded-3xl p-8 sm:p-14 bg-gradient-to-r from-blue-900/60 via-indigo-900/60 to-purple-900/60 border border-indigo-500/30 text-center space-y-6 shadow-2xl backdrop-blur-xl">
+                    
+                    <!-- Ambient Glow -->
+                    <div class="absolute -top-24 -left-24 w-60 h-60 bg-blue-500/20 rounded-full blur-3xl"></div>
+                    <div class="absolute -bottom-24 -right-24 w-60 h-60 bg-purple-500/20 rounded-full blur-3xl"></div>
+
+                    <h2 class="text-3xl sm:text-5xl font-extrabold font-heading text-white tracking-tight relative z-10">
+                        Ready to Build Your Digital Future?
+                    </h2>
+
+                    <p class="text-lg sm:text-xl text-gray-200 max-w-2xl mx-auto font-light leading-relaxed relative z-10">
+                        Start learning valuable digital skills today and take the next step toward your creative and professional goals.
+                    </p>
+
+                    <div class="pt-4 relative z-10">
+                        <a href="#contact" onclick="focusContactForm()" class="inline-flex items-center justify-center px-9 py-4 rounded-xl font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-2xl shadow-indigo-500/30 hover:scale-105 active:scale-95 transition-all text-base">
+                            <span>Start Learning Today</span>
+                            <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT SECTION -->
+        <section id="contact" class="py-20 sm:py-28 relative border-t border-gray-800/60 bg-darkBg/60">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <div class="grid lg:grid-cols-12 gap-12 items-start">
+                    
+                    <!-- Contact Information Column -->
+                    <div class="lg:col-span-5 space-y-8">
+                        <div>
+                            <span class="inline-block text-xs font-bold uppercase tracking-widest text-blue-400 bg-blue-500/10 px-3.5 py-1.5 rounded-full border border-blue-500/20 mb-4">
+                                Connect With Us
+                            </span>
+                            <h2 class="text-3xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
+                                Get in <span class="gradient-text">Touch</span>
+                            </h2>
+                            <p class="text-gray-400 text-sm sm:text-base mt-3 leading-relaxed">
+                                Have questions about our digital skills programs or interested in joining? Reach out directly or fill out the form.
+                            </p>
+                        </div>
+
+                        <!-- Clickable Email Card -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800 hover:border-blue-500/40 transition-all">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xl shrink-0">
+                                    <i class="fa-regular fa-envelope"></i>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold block">Official Direct Email</span>
+                                    <a href="mailto:nizamgudaro58@gmail.com" class="text-base sm:text-lg font-semibold text-white hover:text-blue-400 transition-colors break-all">
+                                        nizamgudaro58@gmail.com
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Academy Statement Note -->
+                        <div class="p-6 rounded-2xl bg-gray-900/60 border border-gray-800/80 space-y-3">
+                            <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm font-heading">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                                <span>Nizam Editor Academy</span>
+                            </div>
+                            <p class="text-xs text-gray-400 leading-relaxed">
+                                Dedicated to quality learning, clear practical skill building, and helping students step confidently into modern digital careers.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <!-- Contact Form Column -->
+                    <div class="lg:col-span-7">
+                        <div class="glass-card p-6 sm:p-10 rounded-3xl border border-white/10 shadow-2xl relative">
+                            
+                            <!-- Success Notification Toast -->
+                            <div id="formToast" class="hidden mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center gap-3">
+                                <i class="fa-solid fa-circle-check text-lg"></i>
+                                <div>
+                                    <span class="font-bold">Message sent successfully!</span>
+                                    <p class="text-xs text-emerald-300">Thank you for contacting Nizam Editor Academy. We will reply to your email shortly.</p>
+                                </div>
+                            </div>
+
+                            <form id="contactForm" onsubmit="handleContactSubmit(event)" class="space-y-6">
+                                
+                                <div class="grid sm:grid-cols-2 gap-6">
+                                    <!-- Name Field -->
+                                    <div class="space-y-2">
+                                        <label for="userName" class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                                            Name <span class="text-rose-400">*</span>
+                                        </label>
+                                        <input type="text" id="userName" required placeholder="Your Full Name" class="w-full px-4 py-3.5 rounded-xl bg-gray-900/80 border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm">
+                                    </div>
+
+                                    <!-- Email Field -->
+                                    <div class="space-y-2">
+                                        <label for="userEmail" class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                                            Email <span class="text-rose-400">*</span>
+                                        </label>
+                                        <input type="email" id="userEmail" required placeholder="your.email@example.com" class="w-full px-4 py-3.5 rounded-xl bg-gray-900/80 border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm">
+                                    </div>
+                                </div>
+
+                                <!-- Course Select Dropdown -->
+                                <div class="space-y-2">
+                                    <label for="courseInterested" class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                                        Course Interested In <span class="text-rose-400">*</span>
+                                    </label>
+                                    <select id="courseInterested" required class="w-full px-4 py-3.5 rounded-xl bg-gray-900/80 border border-gray-800 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm">
+                                        <option value="" disabled selected>Select a course of interest</option>
+                                        <option value="Website Development">Website Development</option>
+                                        <option value="Video Editing">Video Editing</option>
+                                        <option value="Graphic Design">Graphic Design</option>
+                                        <option value="Prompt Writing">Prompt Writing</option>
+                                        <option value="General Inquiry">General Academy Inquiry</option>
+                                    </select>
+                                </div>
+
+                                <!-- Message Field -->
+                                <div class="space-y-2">
+                                    <label for="userMessage" class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                                        Message <span class="text-rose-400">*</span>
+                                    </label>
+                                    <textarea id="userMessage" rows="4" required placeholder="Write your message or inquiry details here..." class="w-full px-4 py-3.5 rounded-xl bg-gray-900/80 border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm resize-none"></textarea>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <button type="submit" id="submitBtn" class="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-xl shadow-indigo-600/20 hover:shadow-indigo-600/40 hover:scale-[1.01] active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                                    <span>Send Message</span>
+                                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                                </button>
+
+                            </form>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="mt-auto border-t border-gray-800 bg-darkBg text-gray-400 py-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-gray-800">
+                    
+                    <!-- Academy Brand -->
+                    <div class="text-center md:text-left space-y-1">
+                        <div class="text-xl font-bold font-heading text-white">
+                            Nizam Editor – Digital Skills Academy
+                        </div>
+                        <p class="text-xs text-indigo-400 font-medium tracking-wider">
+                            Learn • Practice • Create • Grow
+                        </p>
+                    </div>
+
+                    <!-- Direct Clickable Email -->
+                    <div class="text-center md:text-right">
+                        <span class="text-xs text-gray-500 block">Contact Email</span>
+                        <a href="mailto:nizamgudaro58@gmail.com" class="text-sm font-semibold text-gray-300 hover:text-blue-400 transition-colors">
+                            Email: nizamgudaro58@gmail.com
+                        </a>
+                    </div>
+
+                </div>
+
+                <!-- Footer Navigation Links -->
+                <div class="flex flex-wrap items-center justify-center md:justify-between gap-6 text-sm">
+                    
+                    <div class="flex items-center gap-6">
+                        <a href="#home" class="hover:text-white transition-colors">Home</a>
+                        <span class="text-gray-700">|</span>
+                        <a href="#about" class="hover:text-white transition-colors">About</a>
+                        <span class="text-gray-700">|</span>
+                        <a href="#courses" class="hover:text-white transition-colors">Courses</a>
+                        <span class="text-gray-700">|</span>
+                        <a href="#contact" class="hover:text-white transition-colors">Contact</a>
+                    </div>
+
+                    <div class="text-xs text-gray-500 text-center">
+                        © <span id="currentYear">2026</span> Nizam Editor – Digital Skills Academy. All rights reserved.
+                    </div>
+
+                </div>
+
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- COURSE DETAIL MODAL -->
+    <div id="courseModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="glass-card max-w-lg w-full rounded-3xl p-6 sm:p-8 border border-white/10 shadow-2xl relative space-y-6 animate-scale-up">
+            
+            <button onclick="closeCourseModal()" aria-label="Close modal" class="absolute top-5 right-5 w-9 h-9 rounded-full bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center gap-4">
+                <div id="modalIcon" class="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-2xl shrink-0">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                    <span class="text-xs text-blue-400 uppercase font-semibold tracking-wider">Academy Course</span>
+                    <h3 id="modalTitle" class="text-2xl font-bold font-heading text-white">Course Title</h3>
+                </div>
+            </div>
+
+            <p id="modalDescription" class="text-sm text-gray-300 leading-relaxed">
+                Detailed description of the course.
+            </p>
+
+            <div class="space-y-3 bg-gray-900/60 p-4 rounded-2xl border border-gray-800 text-xs">
+                <div class="text-white font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-star text-amber-400"></i> Course Highlights
+                </div>
+                <ul class="text-gray-400 space-y-1.5 list-disc list-inside">
+                    <li>Practical project-based structure</li>
+                    <li>Designed for all skill levels</li>
+                    <li>Real-world applications & freelancing focus</li>
+                </ul>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button onclick="enrollInCourse()" class="flex-1 py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-[1.02] active:scale-95 transition-all text-sm">
+                    Enroll / Inquire Now
+                </button>
+                <button onclick="closeCourseModal()" class="px-5 py-3.5 rounded-xl font-semibold text-gray-300 glass-card border border-gray-700 hover:text-white text-sm">
+                    Close
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Set dynamic current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Mobile Menu Drawer Logic
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const menuIcon = document.getElementById('menuIcon');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            if (mobileMenu.classList.contains('hidden')) {
+                menuIcon.className = 'fa-solid fa-bars text-lg';
+            } else {
+                menuIcon.className = 'fa-solid fa-xmark text-lg';
+            }
+        });
+
+        // Close mobile drawer when clicking links
+        document.querySelectorAll('.mobile-link').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+                menuIcon.className = 'fa-solid fa-bars text-lg';
+            });
+        });
+
+        // Course Modal Logic
+        const courseData = {
+            'Website Development': {
+                icon: 'fa-code',
+                colorClass: 'text-blue-400',
+                desc: 'Learn to create modern, responsive and professional websites and understand the fundamentals of web development. Build high-performance layouts that adapt flawlessly to mobile, tablet, and desktop displays.'
+            },
+            'Video Editing': {
+                icon: 'fa-video',
+                colorClass: 'text-purple-400',
+                desc: 'Learn video editing, transitions, effects, short-form video creation and professional social media content editing. Perfect for aspiring digital creators and video production freelancers.'
+            },
+            'Graphic Design': {
+                icon: 'fa-pen-nib',
+                colorClass: 'text-cyan-400',
+                desc: 'Learn to create professional logos, thumbnails, social media posts, banners and other creative designs. Develop an eye for typography, balance, and visual color theory.'
+            },
+            'Prompt Writing': {
+                icon: 'fa-wand-magic-sparkles',
+                colorClass: 'text-amber-400',
+                desc: 'Learn how to write effective AI prompts and use modern AI tools for image generation, video creation, content creation and productivity. Boost your creative output exponentially.'
+            }
+        };
+
+        let activeSelectedCourse = '';
+
+        function openCourseModal(courseTitle) {
+            const course = courseData[courseTitle];
+            if (!course) return;
+
+            activeSelectedCourse = courseTitle;
+            document.getElementById('modalTitle').textContent = courseTitle;
+            document.getElementById('modalDescription').textContent = course.desc;
+            
+            const modalIcon = document.getElementById('modalIcon');
+            modalIcon.innerHTML = `<i class="fa-solid ${course.icon}"></i>`;
+            modalIcon.className = `w-12 h-12 rounded-2xl bg-gray-800 ${course.colorClass} flex items-center justify-center text-2xl shrink-0`;
+
+            const modal = document.getElementById('courseModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCourseModal() {
+            const modal = document.getElementById('courseModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function enrollInCourse() {
+            closeCourseModal();
+            const courseSelect = document.getElementById('courseInterested');
+            if (courseSelect && activeSelectedCourse) {
+                courseSelect.value = activeSelectedCourse;
+            }
+            focusContactForm();
+        }
+
+        function focusContactForm() {
+            const contactSection = document.getElementById('contact');
+            contactSection.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => {
+                document.getElementById('userName').focus();
+            }, 600);
+        }
+
+        // Handle Contact Form Submission
+        function handleContactSubmit(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Sending...`;
+
+            // Simulate quick interactive submission
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                
+                // Show notification toast
+                const toast = document.getElementById('formToast');
+                toast.classList.remove('hidden');
+
+                // Reset Form
+                document.getElementById('contactForm').reset();
+
+                // Auto hide toast after 6 seconds
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 6000);
+            }, 1000);
+        }
+
+        // Background Particle Canvas Dynamic Animation
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const particles = [];
+        const particleCount = Math.min(Math.floor(window.innerWidth / 20), 45);
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 2 + 1,
+                dx: (Math.random() - 0.5) * 0.4,
+                dy: (Math.random() - 0.5) * 0.4,
+                alpha: Math.random() * 0.5 + 0.2
+            });
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach(p => {
+                p.x += p.dx;
+                p.y += p.dy;
+
+                if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(139, 92, 246, ${p.alpha})`;
+                ctx.fill();
+            });
+
+            requestAnimationFrame(animateParticles);
+        }
+
+        window.onload = function() {
+            animateParticles();
+        };
+
+        // PWA Dynamic Web App Manifest Generator
+        const pwaManifestData = {
+            "name": "Nizam Editor – Digital Skills Academy",
+            "short_name": "Nizam Editor",
+            "start_url": "./",
+            "display": "standalone",
+            "background_color": "#080c14",
+            "theme_color": "#080c14",
+            "orientation": "portrait-primary",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%233b82f6'><rect width='512' height='512' rx='128' fill='%23080c14'/><path d='M256 120L384 200V280L256 360L128 280V200L256 120Z' fill='%238b5cf6'/><path d='M256 160L340 212V268L256 320L172 268V212L256 160Z' fill='%2338bdf8'/></svg>",
+                    "sizes": "192x192 512x512",
+                    "type": "image/svg+xml",
+                    "purpose": "any maskable"
+                }
+            ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(pwaManifestData)], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        document.getElementById('manifest-link').setAttribute('href', manifestURL);
+
+        // Service Worker registration for offline and app installation support
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', (e) => self.skipWaiting());
+                self.addEventListener('activate', (e) => self.clients.claim());
+                self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
+            `;
+            const swBlob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(swBlob);
+            navigator.serviceWorker.register(swUrl).catch(() => {});
+        }
+
+        // PWA Install Prompt Capture
+        let deferredPrompt;
+        const installHeaderBtn = document.getElementById('pwaInstallHeaderBtn');
+        const installHeroBtn = document.getElementById('pwaInstallHeroBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Unhide install buttons on supported mobile devices
+            if (installHeaderBtn) installHeaderBtn.classList.remove('hidden');
+            if (installHeroBtn) installHeroBtn.classList.remove('hidden');
+        });
+
+        function triggerPwaInstall() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        if (installHeaderBtn) installHeaderBtn.classList.add('hidden');
+                        if (installHeroBtn) installHeroBtn.classList.add('hidden');
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                // Fallback instructions for manual install on Chrome/Edge Android
+                alert('App Install Alert:\n\nAndroid Mobile screen par install karne ke liye:\n1. Chrome browser ka top-right 3-dots menu (⋮) click karein.\n2. "Install App" ya "Add to Home screen" par tap karein!');
+            }
+        }
+    </script>
+</body>
+</html>
